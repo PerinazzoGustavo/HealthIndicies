@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -129,6 +130,51 @@ public class SqlHelper extends SQLiteOpenHelper {
                 db.endTransaction();
         }
         return calcID; // Retornando o id dos itens
+    }
+
+
+    long updateItem(String type, double response, int id) {
+        SQLiteDatabase db = getWritableDatabase();
+        long calcId = 0;
+        db.beginTransaction();
+
+        try {
+            ContentValues values = new ContentValues();
+
+            values.put("type_calc", type);
+            values.put("response", response);
+
+            String actual_hour = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",
+                    new Locale("pt", "br")).format(Calendar.getInstance().getTime());
+
+            values.put("created_time", actual_hour);
+            // where statement dentro do banco
+            calcId = db.update("calc", values, "id = ? and type_calc = ?", new String[]{String.valueOf(id), type});
+            db.setTransactionSuccessful();
+
+        } catch (Exception e) {
+            Log.e("SqLite", e.getMessage(), e);
+        } finally {
+            if (db.isOpen())
+                db.endTransaction();
+        }
+        return calcId;
+    }
+
+    long deleteItem(String type, int id) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        long calcId = 0;
+
+        try {
+            calcId = db.delete("calc", "id = ? and type_calc = ?", new String[]{String.valueOf(id), type} );
+            db.setTransactionSuccessful();
+        } catch (Exception e){
+            Log.e("Erro ao remover", e.getMessage(), e);
+        } finally {
+            db.endTransaction();
+        }
+        return calcId;
     }
 
 }

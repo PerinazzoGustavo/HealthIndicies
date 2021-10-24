@@ -58,11 +58,24 @@ public class ImcActivity extends AppCompatActivity {
                     .setTitle(getString(R.string.imc_response, resultIMC))
                     .setMessage(imcResponseID)
                     // lado direito
-                    .setPositiveButton(android.R.string.ok, (dialogInterface, i) -> {
-
+                    .setNegativeButton(android.R.string.ok, (dialogInterface, i) -> {
+                        dialogInterface.dismiss();
                     })
-                    .setNegativeButton(R.string.save, ((dialog1, which) -> new Thread(() -> {
-                        long calcID = SqlHelper.getInstance(ImcActivity.this).addItem("imc", resultIMC);
+                    .setPositiveButton(R.string.save, ((dialog1, which) -> new Thread(() -> {
+                        int updateId = 0;
+                        /* Verifica se tem algum ID vindo da tela anterior quando chamado UPDATE */
+                        if (getIntent().getExtras() != null)
+                            updateId = getIntent().getExtras().getInt("updateId", 0);
+
+                        long calcID;
+
+                        if (updateId > 0) {
+                            calcID = SqlHelper.getInstance(ImcActivity.this).updateItem("imc", resultIMC, updateId);
+                        } else {
+                            calcID = SqlHelper.getInstance(ImcActivity.this).addItem("imc", resultIMC);
+                        }
+
+
                         runOnUiThread(() -> {
                             /* Caso o id seja != de 0 irá mostrar um toast para o usuário, criando
                              * uma nova intent para ir para uma nova activity que irá mostrar a lista

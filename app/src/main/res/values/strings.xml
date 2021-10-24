@@ -33,4 +33,7 @@
     <string name="search">Buscar</string>
     <string name="man_string">Masculino</string>
     <string name="woman_string">Feminino</string>
+    <string name="delete_itens">Tem Certeza que deseja excluir o conteúdo?</string>
+    <string name="cancel">Cancelar</string>
+    <string name="successfully_deleted">Registro excluído com sucesso!</string>
 </resources>

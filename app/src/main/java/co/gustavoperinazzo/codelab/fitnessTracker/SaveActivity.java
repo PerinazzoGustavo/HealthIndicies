@@ -1,12 +1,16 @@
 package co.gustavoperinazzo.codelab.fitnessTracker;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -42,17 +46,13 @@ public class SaveActivity extends AppCompatActivity {
                     rv_save.setLayoutManager(new LinearLayoutManager(this));
                     rv_save.setAdapter(adapter);
                 });
-
-
             }).start();
         }
-
-
     }
 
-    private class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder> {
+    private class ListAdapter extends RecyclerView.Adapter<ListViewHolder> implements OnAdapterItemClickListener {
 
-        private List<Register> registersList;
+        private final List<Register> registersList;
 
         private ListAdapter(List<Register> registersList) {
             this.registersList = registersList;
@@ -65,10 +65,11 @@ public class SaveActivity extends AppCompatActivity {
             return new ListViewHolder(getLayoutInflater().inflate(android.R.layout.simple_list_item_1, parent, false));
         }
 
+
         @Override
         public void onBindViewHolder(@NonNull ListViewHolder holder, int position) {
             Register currentRegister = registersList.get(position);
-            holder.bind(currentRegister);
+            holder.bind(currentRegister, this);
         }
 
         @Override
@@ -76,31 +77,86 @@ public class SaveActivity extends AppCompatActivity {
             return registersList.size();
         }
 
-        private class ListViewHolder extends RecyclerView.ViewHolder {
+        @Override
+        public void onLongClick(int position, String type, int id) {
+            /* Evento para exclusão dos itens ao usuário */
+            AlertDialog.Builder builder = new AlertDialog.Builder(SaveActivity.this);
+            builder.setMessage(getString(R.string.delete_itens));
+            builder.setNegativeButton(R.string.cancel, (dialog, which) -> {
+                dialog.dismiss();
+            });
+            builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                new Thread(() -> {
+                    SqlHelper sqlHelper = SqlHelper.getInstance(SaveActivity.this);
+                    long calcId = sqlHelper.deleteItem(type, id);
 
-            public ListViewHolder(@NonNull View itemView) {
-                super(itemView);
+                    runOnUiThread(() -> {
+                        if (calcId > 0) {
+                            Toast.makeText(SaveActivity.this, R.string.successfully_deleted, Toast.LENGTH_SHORT).show();
+                            registersList.remove(position);
+                            notifyDataSetChanged();
+                            Log.d("Exlusão", "" + registersList.remove(position));
+                        }
+                    });
+                }).start();
+            }); AlertDialog alertDialog = builder
+                    .create();
+
+            alertDialog.show();
+        }
+
+
+        @Override
+        public void onClick(int id, String type) {
+            /* Verificar qual tipo de dado deve ser editado na proxima tela */
+            switch (type) {
+                case "imc":
+                    Intent intent = new Intent(SaveActivity.this, ImcActivity.class);
+                    intent.putExtra("updateId", id);
+                    startActivity(intent);
+                    break;
+                case "tmb":
+                    Intent intent1 = new Intent(SaveActivity.this, TmbActivity.class);
+                    intent1.putExtra("updateId", id);
+                    startActivity(intent1);
+                    break;
+            }
+        }
+    }
+
+
+    private class ListViewHolder extends RecyclerView.ViewHolder {
+
+        public ListViewHolder(@NonNull View itemView) {
+            super(itemView);
+        }
+
+        public void bind(Register register, final OnAdapterItemClickListener onItemClickListener) {
+            String formatted = "";
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", new Locale("pt", "br"));
+                Date dateSaved = sdf.parse(register.created_date);
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", new Locale("pt", "br"));
+                formatted = dateFormat.format(dateSaved);
+
+            } catch (ParseException e) {
             }
 
-            public void bind(Register register) {
-                String formatted = "";
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", new Locale("pt", "br"));
-                    Date dateSaved = sdf.parse(register.created_date);
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", new Locale("pt", "br"));
-                    formatted = dateFormat.format(dateSaved);
+            /* Casting do objeto que já é uma view */
+            ((TextView) itemView).setText(
+                    getString(R.string.save_response, register.response, formatted)
+            );
 
-                    String actual_hour = sdf.format(new Date());
-                } catch (ParseException e) {
-                }
+            /* Evento para Click e abrir a edição */
+            itemView.setOnClickListener(v -> {
+                onItemClickListener.onClick(register.id, register.type);
+            });
 
-
-
-                /* Casting do objeto que já é uma view */
-                ((TextView) itemView).setText(
-                        getString(R.string.save_response, register.response, formatted)
-                );
-            }
+            /* Evento de Click-longo - remover listagem  */
+            itemView.setOnLongClickListener(v -> {
+                onItemClickListener.onLongClick(getAbsoluteAdapterPosition(), register.type, register.id);
+                return false;
+            });
         }
     }
 }

@@ -3,7 +3,6 @@ package co.gustavoperinazzo.codelab.fitnessTracker;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -38,8 +37,6 @@ public class TmbActivity extends AppCompatActivity {
         spinner = findViewById(R.id.spinner_lifestyle);
 
 
-
-
         btnTmb.setOnClickListener(view -> {
 
             if (!validate()) {
@@ -70,12 +67,23 @@ public class TmbActivity extends AppCompatActivity {
                 case R.id.man_button:
                     AlertDialog.Builder builder = new AlertDialog.Builder(TmbActivity.this);
                     builder.setMessage(getString(R.string.tmb_response, tmbResponseMaleId));
-                    builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    builder.setNegativeButton(android.R.string.ok, (dialog, which) -> {
+                        dialog.dismiss();
                     });
-                    builder.setNegativeButton(R.string.save, ((dialog1, which) -> new Thread(() -> {
-                        long calcID = SqlHelper.getInstance(TmbActivity.this).addItem("tmb", tmbResponseMaleId);
+                    builder.setPositiveButton(R.string.save, ((dialog1, which) -> new Thread(() -> {
+                        int updateId = 0;
+
+                        /* Verifica se*/
+                        if (getIntent().getExtras() != null)
+                            updateId = getIntent().getExtras().getInt("tmb", 0);
+                        long calcID;
+                        if (updateId > 0) {
+                            calcID = SqlHelper.getInstance(TmbActivity.this).updateItem("tmb", tmbResponseMaleId, updateId);
+                        } else {
+                            calcID = SqlHelper.getInstance(TmbActivity.this).addItem("tmb", tmbResponseMaleId);
+                        }
                         runOnUiThread(() -> {
-                            if (calcID > 0){
+                            if (calcID > 0) {
                                 Toast.makeText(TmbActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
                                 openSaveListCalcActivity();
                             }
@@ -86,12 +94,23 @@ public class TmbActivity extends AppCompatActivity {
                 case R.id.woman_button:
                     AlertDialog.Builder builder1 = new AlertDialog.Builder(TmbActivity.this);
                     builder1.setMessage(getString(R.string.tmb_response, tmbResponseFemaleId));
-                    builder1.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    builder1.setNegativeButton(android.R.string.ok, (dialog, which) -> {
+                        dialog.dismiss();
                     });
-                    builder1.setNegativeButton(R.string.save, ((dialog1, which) -> new Thread(() -> {
-                        long calcID = SqlHelper.getInstance(TmbActivity.this).addItem("tmb", tmbResponseFemaleId);
+                    builder1.setPositiveButton(R.string.save, ((dialog1, which) -> new Thread(() -> {
+                        int updateId = 0;
+
+                        if (getIntent().getExtras() != null)
+                            updateId = getIntent().getExtras().getInt("tmb", 0);
+                        long calcID;
+                        if (updateId > 0) {
+                            calcID = SqlHelper.getInstance(TmbActivity.this).updateItem("tmb", tmbResponseFemaleId, updateId);
+                        } else {
+                            calcID = SqlHelper.getInstance(TmbActivity.this).addItem("tmb", tmbResponseFemaleId);
+                        }
+
                         runOnUiThread(() -> {
-                            if (calcID > 0){
+                            if (calcID > 0) {
                                 Toast.makeText(TmbActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
                                 openSaveListCalcActivity();
                             }
